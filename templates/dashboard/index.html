@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | ResearchRadar AI{% endblock %}
+
+{% block page_title %}ResearchRadar AI{% endblock %}
+{% block page_subtitle %}Multi-Agent Analysis Dashboard{% endblock %}
+
+{% block header_actions %}
+<button class="btn-3d btn-3d-accent" onclick="runGapDetection(this)">
+    <i class="fas fa-arrows-spin"></i> Trigger Gap Detection Agent
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Cards Grid -->
+<div class="stats-grid">
+    <!-- Total Papers -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <div class="stat-number">{{ total_papers }}</div>
+            <div class="stat-label">Papers Uploaded</div>
+        </div>
+    </div>
+    
+    <!-- Gaps Detected -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon">
+                <i class="fas fa-bolt-lightning"></i>
+            </div>
+            <div class="stat-number">{{ gaps_count }}</div>
+            <div class="stat-label">Research Gaps Detected</div>
+        </div>
+    </div>
+    
+    <!-- Ideas Generated -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="stat-number">{{ ideas_count }}</div>
+            <div class="stat-label">Project Ideas Generated</div>
+        </div>
+    </div>
+    
+    <!-- Literature Reviews -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="stat-number">{{ reviews_count }}</div>
+            <div class="stat-label">Literature Reviews</div>
+        </div>
+    </div>
+    
+    <!-- Total Pages Processed -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon" style="color: #3b82f6; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2);">
+                <i class="fas fa-file-lines"></i>
+            </div>
+            <div class="stat-number">{{ total_pages_processed }}</div>
+            <div class="stat-label">Total Pages Processed</div>
+        </div>
+    </div>
+    
+    <!-- Total Research Domains -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2);">
+                <i class="fas fa-globe"></i>
+            </div>
+            <div class="stat-number">{{ total_domains }}</div>
+            <div class="stat-label">Total Research Domains</div>
+        </div>
+    </div>
+    
+    <!-- Average Novelty Score -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon" style="color: #00f2fe; background: rgba(0, 242, 254, 0.1); border-color: rgba(0, 242, 254, 0.2);">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="stat-number">{{ avg_novelty }}</div>
+            <div class="stat-label">Average Novelty Score</div>
+        </div>
+    </div>
+    
+    <!-- Average Impact Score -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon" style="color: #ff007f; background: rgba(255, 0, 127, 0.1); border-color: rgba(255, 0, 127, 0.2);">
+                <i class="fas fa-circle-nodes"></i>
+            </div>
+            <div class="stat-number">{{ avg_impact }}</div>
+            <div class="stat-label">Average Impact Score</div>
+        </div>
+    </div>
+    
+    <!-- Average Difficulty Score -->
+    <div class="card-3d stat-card">
+        <div class="pop-3d">
+            <div class="stat-icon" style="color: #eab308; background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.2);">
+                <i class="fas fa-sliders"></i>
+            </div>
+            <div class="stat-number">{{ avg_difficulty }}</div>
+            <div class="stat-label">Average Difficulty Score</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Section Split -->
+<div class="content-grid">
+    <!-- Left Column: Papers & Vector Search -->
+    <div class="paper-detail-section">
+        <!-- Live Semantic Search -->
+        <div class="card-3d">
+            <div class="pop-3d">
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">
+                    <i class="fas fa-magnifying-glass" style="color:var(--secondary);"></i> Vector Semantic Search
+                </h3>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.25rem;">
+                    Query all uploaded research papers by semantic meaning. This fetches matching chunks directly from ChromaDB.
+                </p>
+                
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="semantic-search-input" class="search-input" placeholder="Type a concept, method, or limitation (e.g., explainable neural nets)...">
+                </div>
+                
+                <div id="search-results-list" class="search-results-list">
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>Type at least 3 characters to search across paper chunks...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Papers Table -->
+        <div class="card-3d">
+            <div class="pop-3d">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+                    <h3 style="font-size: 1.25rem; font-weight: 700;">
+                        <i class="fas fa-clock" style="color:var(--primary);"></i> Recently Uploaded Papers
+                    </h3>
+                    <a href="{% url 'dashboard:upload' %}" class="btn-3d btn-3d-secondary" style="font-size:0.8rem; padding: 0.5rem 1rem;">
+                        Upload More
+                    </a>
+                </div>
+                
+                {% if recent_papers %}
+                <div class="table-container">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Upload Date</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for paper in recent_papers %}
+                            <tr>
+                                <td style="font-weight: 600; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    {% if paper.file %}
+                                    <a href="{{ paper.file.url }}" target="_blank" style="color:var(--secondary); text-decoration:none;" title="Open document in new tab">
+                                        {{ paper.title|default:"Unnamed Paper" }} <i class="fas fa-arrow-up-right-from-square" style="font-size:0.7rem; opacity:0.8;"></i>
+                                    </a>
+                                    {% else %}
+                                    {{ paper.title|default:"Unnamed Paper" }}
+                                    {% endif %}
+                                    {% if paper.status == 'COMPLETED' %}
+                                    <span style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:normal; margin-top: 4px;">
+                                        <i class="fas fa-file-pdf" style="font-size: 0.75rem; margin-right: 2px;"></i> {{ paper.pdf_size|default:"0 Bytes" }} &bull; 
+                                        <i class="fas fa-file-lines" style="font-size: 0.75rem; margin-right: 2px;"></i> {{ paper.page_count|default:0 }} Pages &bull; 
+                                        <i class="fas fa-clock" style="font-size: 0.75rem; margin-right: 2px;"></i> Processed in {{ paper.processing_time|floatformat:1 }}s
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ paper.status|lower }}" data-paper-id="{{ paper.id }}" data-paper-status="{{ paper.status }}">
+                                        {% if paper.status == 'PROCESSING' %}
+                                            Processing: {{ paper.processing_percentage }}%
+                                        {% else %}
+                                            {{ paper.status }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td style="color:var(--text-muted); font-size:0.85rem;">
+                                    {{ paper.upload_date|date:"M d, Y" }}
+                                </td>
+                                <td style="text-align:right;">
+                                    {% if paper.status == 'COMPLETED' %}
+                                    <a href="{% url 'dashboard:summaries' %}" class="btn-3d btn-3d-secondary" style="font-size:0.75rem; padding:4px 10px;">
+                                        View summary
+                                    </a>
+                                    {% elif paper.status == 'PENDING' or paper.status == 'FAILED' %}
+                                    <button onclick="processPaperManually('{{ paper.id }}', this)" class="btn-3d" style="font-size:0.75rem; padding:4px 10px;">
+                                        <i class="fas fa-play"></i> Process
+                                    </button>
+                                    {% else %}
+                                    <button class="btn-3d btn-3d-secondary" style="font-size:0.75rem; padding:4px 10px;" disabled>
+                                        <i class="fas fa-spinner fa-spin"></i> Processing
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-excel"></i>
+                    <p>No research papers uploaded yet. Get started by uploading papers in the upload section.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column: Recent Gaps & System Activity -->
+    <div class="paper-detail-section">
+        <!-- Recent Gaps detected -->
+        <div class="card-3d">
+            <div class="pop-3d">
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem;">
+                    <i class="fas fa-bolt-lightning" style="color:#f43f5e;"></i> Identified Gaps
+                </h3>
+                
+                {% if recent_gaps %}
+                <div style="display:flex; flex-direction:column; gap:1.25rem;">
+                    {% for gap in recent_gaps %}
+                    <div style="border-bottom:1px solid rgba(255, 255, 255, 0.04); padding-bottom: 1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:6px;">
+                            <h4 style="font-size:0.95rem; font-weight:700; max-width:80%;">{{ gap.title }}</h4>
+                            <span class="badge badge-completed" style="font-size:0.7rem;">{{ gap.confidence_score|floatformat:2 }} Conf</span>
+                        </div>
+                        <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            {{ gap.description }}
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="margin-top:1rem; text-align:center;">
+                    <a href="{% url 'dashboard:gaps' %}" class="btn-3d btn-3d-secondary" style="font-size:0.8rem; width:100%; justify-content:center;">
+                        View all Detected Gaps
+                    </a>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-circle-exclamation"></i>
+                    <p>No research gaps detected. Click the trigger button at the top to analyze uploaded papers.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Multi-Agent configurations log info -->
+        <div class="card-3d">
+            <div class="pop-3d">
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">
+                    <i class="fas fa-robot" style="color:var(--secondary);"></i> Active Agents
+                </h3>
+                <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-glasses" style="color:var(--secondary); font-size:1rem;"></i>
+                        <div>
+                            <span style="font-weight:600; color:#fff;">PaperReadingAgent</span>
+                            <span style="display:block; font-size:0.75rem; color:var(--text-muted);">Parses and chunks PDFs via PyMuPDF</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-file-lines" style="color:var(--primary); font-size:1rem;"></i>
+                        <div>
+                            <span style="font-weight:600; color:#fff;">SummaryAgent</span>
+                            <span style="display:block; font-size:0.75rem; color:var(--text-muted);">Extracts objectives, method, conclusions</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-bolt" style="color:#f43f5e; font-size:1rem;"></i>
+                        <div>
+                            <span style="font-weight:600; color:#fff;">GapDetectionAgent</span>
+                            <span style="display:block; font-size:0.75rem; color:var(--text-muted);">Isolates underexplored areas in research</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-wand-magic-sparkles" style="color:#eab308; font-size:1rem;"></i>
+                        <div>
+                            <span style="font-weight:600; color:#fff;">ProjectIdeaAgent</span>
+                            <span style="display:block; font-size:0.75rem; color:var(--text-muted);">Formulates complete project strategies</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

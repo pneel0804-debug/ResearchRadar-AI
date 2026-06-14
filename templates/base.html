@@ -1,0 +1,163 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ResearchRadar AI{% endblock %}</title>
+    
+    <!-- Google Font & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom 3D UX Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    
+    <!-- Dynamic SVG gradients definitions -->
+    <svg style="width:0; height:0; position:absolute;" aria-hidden="true" focusable="false">
+        <defs>
+            <linearGradient id="grad-purple" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#8a2be2" />
+                <stop offset="100%" stop-color="#6366f1" />
+            </linearGradient>
+            <linearGradient id="grad-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00f2fe" />
+                <stop offset="100%" stop-color="#0ea5e9" />
+            </linearGradient>
+            <linearGradient id="grad-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff007f" />
+                <stop offset="100%" stop-color="#e11d48" />
+            </linearGradient>
+        </defs>
+    </svg>
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- =============================================
+         FULL-SCREEN 3D WELCOME SPLASH SCREEN
+         ============================================= -->
+    <div id="splash-screen" aria-hidden="true">
+        <canvas id="splash-canvas"></canvas>
+
+        <!-- Floating orbital rings -->
+        <div class="splash-rings">
+            <div class="splash-ring ring-1"></div>
+            <div class="splash-ring ring-2"></div>
+            <div class="splash-ring ring-3"></div>
+        </div>
+
+        <!-- Center content -->
+        <div class="splash-center">
+            <!-- Logo icon (big, animated) -->
+            <div class="splash-logo-icon" id="splashLogoIcon">
+                <i class="fas fa-cubes-stacked"></i>
+            </div>
+
+            <!-- Brand name -->
+            <div class="splash-brand">
+                <span class="splash-research">Research</span><span class="splash-radar">Radar</span><span class="splash-ai-badge">AI</span>
+            </div>
+
+            <!-- Tagline -->
+            <p class="splash-tagline" id="splashTagline">Multi-Agent Research Intelligence Platform</p>
+
+            <!-- Animated loading bar -->
+            <div class="splash-loader">
+                <div class="splash-loader-bar" id="splashLoaderBar"></div>
+            </div>
+            <p class="splash-loading-text" id="splashLoadingText">Initializing AI Agents…</p>
+        </div>
+    </div>
+
+    <!-- 3D Perspective Grid Background & Floating Particle Canvas -->
+    <div class="bg-grid-3d">
+        <div class="bg-grid-plane"></div>
+    </div>
+    <canvas id="bg-3d-canvas"></canvas>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fas fa-cubes-stacked" style="color:white;"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-research">Research</span><span class="logo-radar">Radar</span><span class="logo-ai">AI</span>
+                </div>
+            </div>
+            
+            <nav class="nav-links">
+                <li class="nav-item {% if request.resolver_match.view_name == 'dashboard:index' %}active{% endif %}">
+                    <a href="{% url 'dashboard:index' %}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.view_name == 'dashboard:upload' %}active{% endif %}">
+                    <a href="{% url 'dashboard:upload' %}">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Upload Papers</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.view_name == 'dashboard:summaries' %}active{% endif %}">
+                    <a href="{% url 'dashboard:summaries' %}">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Paper Summaries</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.view_name == 'dashboard:gaps' %}active{% endif %}">
+                    <a href="{% url 'dashboard:gaps' %}">
+                        <i class="fas fa-bolt-lightning"></i>
+                        <span>Research Gaps</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.view_name == 'dashboard:ideas' %}active{% endif %}">
+                    <a href="{% url 'dashboard:ideas' %}">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Project Ideas</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.view_name == 'dashboard:literature' %}active{% endif %}">
+                    <a href="{% url 'dashboard:literature' %}">
+                        <i class="fas fa-book-open"></i>
+                        <span>Literature Reviews</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.view_name == 'dashboard:experiments' %}active{% endif %}">
+                    <a href="{% url 'dashboard:experiments' %}">
+                        <i class="fas fa-vial"></i>
+                        <span>Experimental Plans</span>
+                    </a>
+                </li>
+            </nav>
+            
+
+        </aside>
+        
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="page-header">
+                <div>
+                    <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p class="page-subtitle">{% block page_subtitle %}System Overview & Quick Stats{% endblock %}</p>
+                </div>
+                <div>
+                    {% block header_actions %}{% endblock %}
+                </div>
+            </header>
+            
+            <!-- Page Contents -->
+            <section class="content-wrapper">
+                {% block content %}{% endblock %}
+            </section>
+        </main>
+    </div>
+    
+    <!-- Custom 3D UI Logic -->
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

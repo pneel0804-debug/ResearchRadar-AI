@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Papers | ResearchRadar AI{% endblock %}
+
+{% block page_title %}Upload Research Papers{% endblock %}
+{% block page_subtitle %}Add research PDFs to your knowledge library{% endblock %}
+
+{% block content %}
+<div style="display:flex; flex-direction:column; gap:2rem;">
+    <!-- Drag & Drop Uploader Zone -->
+    <div class="card-3d">
+        <div class="pop-3d">
+            <div id="upload-zone" class="upload-zone">
+                <input type="file" id="upload-file-input" multiple accept="application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint" style="display:none;">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                </div>
+                <div class="upload-text">
+                    <h3>Drag & Drop Research Papers/Slides Here</h3>
+                    <p>or click to browse your folders. Supports multiple PDF & PowerPoint uploads.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Uploaded Papers History -->
+    <div class="card-3d">
+        <div class="pop-3d">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin: 0;">
+                    <i class="fas fa-list-check" style="color:var(--primary);"></i> Knowledge Base Papers
+                </h3>
+                <button id="delete-selected-btn" onclick="deleteSelectedPapers()" class="btn-3d btn-3d-secondary" style="font-size:0.75rem; padding:6px 12px; margin:0; border-color:rgba(239, 68, 68, 0.4); color:#ef4444; display:none;" title="Delete selected papers and vectors">
+                    <i class="fas fa-trash-can"></i> Delete Selected (<span id="selected-count">0</span>)
+                </button>
+            </div>
+            
+            {% if papers %}
+            <div class="table-container">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">
+                                <input type="checkbox" id="select-all-papers" onclick="toggleSelectAllPapers(this)">
+                            </th>
+                            <th>File Name</th>
+                            <th>Title / Metadata</th>
+                            <th>Status</th>
+                            <th>Upload Date</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paper in papers %}
+                        <tr>
+                            <td style="text-align: center; width: 40px;">
+                                <input type="checkbox" class="paper-select" value="{{ paper.id }}" onclick="togglePaperSelection(this)">
+                            </td>
+                            <td style="font-family: monospace; font-size:0.85rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {{ paper.file.name|slice:"7:" }} <!-- Slice off the 'papers/' prefix -->
+                            </td>
+                             <td style="font-weight: 600; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {% if paper.file %}
+                                <a href="{{ paper.file.url }}" target="_blank" style="color:var(--secondary); text-decoration:none;" title="Open document in new tab">
+                                    {{ paper.title|default:"Pending analysis..." }} <i class="fas fa-arrow-up-right-from-square" style="font-size:0.7rem; opacity:0.8;"></i>
+                                </a>
+                                {% else %}
+                                {{ paper.title|default:"Pending analysis..." }}
+                                {% endif %}
+                                {% if paper.authors %}
+                                <span style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:normal;">
+                                    {{ paper.authors }}
+                                </span>
+                                {% endif %}
+                                {% if paper.status == 'COMPLETED' %}
+                                <span style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:normal; margin-top: 4px;">
+                                    <i class="fas fa-file-pdf" style="font-size: 0.75rem; margin-right: 2px;"></i> {{ paper.pdf_size|default:"0 Bytes" }} &bull; 
+                                    <i class="fas fa-file-lines" style="font-size: 0.75rem; margin-right: 2px;"></i> {{ paper.page_count|default:0 }} Pages &bull; 
+                                    <i class="fas fa-clock" style="font-size: 0.75rem; margin-right: 2px;"></i> Processed in {{ paper.processing_time|floatformat:1 }}s
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ paper.status|lower }}" data-paper-id="{{ paper.id }}" data-paper-status="{{ paper.status }}">
+                                    {% if paper.status == 'PROCESSING' %}
+                                        Processing: {{ paper.processing_percentage }}%
+                                    {% else %}
+                                        {{ paper.status }}
+                                    {% endif %}
+                                </span>
+                                {% if paper.error_message %}
+                                <span style="display:block; font-size:0.7rem; color:#ef4444; margin-top:2px;" title="{{ paper.error_message }}">
+                                    Hover for details
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td style="color:var(--text-muted); font-size:0.85rem;">
+                                {{ paper.upload_date|date:"M d, Y H:i" }}
+                            </td>
+                            <td style="text-align:right; white-space:nowrap; display:flex; justify-content:flex-end; gap:6px; align-items:center;">
+                                {% if paper.status == 'COMPLETED' %}
+                                <button onclick="processPaperManually('{{ paper.id }}', this)" class="btn-3d btn-3d-secondary" style="font-size:0.75rem; padding:4px 10px; margin:0;">
+                                    <i class="fas fa-arrows-rotate"></i> Re-Process
+                                </button>
+                                {% elif paper.status == 'PROCESSING' %}
+                                <button class="btn-3d btn-3d-secondary" style="font-size:0.75rem; padding:4px 10px; margin:0;" disabled>
+                                    <i class="fas fa-spinner fa-spin"></i> Analyzing...
+                                </button>
+                                {% else %}
+                                <button onclick="processPaperManually('{{ paper.id }}', this)" class="btn-3d" style="font-size:0.75rem; padding:4px 10px; margin:0;">
+                                    <i class="fas fa-play"></i> Process Paper
+                                </button>
+                                {% endif %}
+                                <button onclick="deletePaper('{{ paper.id }}', this)" class="btn-3d btn-3d-secondary" style="font-size:0.75rem; padding:4px 10px; margin:0; border-color:rgba(239, 68, 68, 0.4); color:#ef4444;" title="Delete paper and vectors">
+                                    <i class="fas fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <p>Your library is empty. Drag and drop research papers above to parse and extract AI gaps.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

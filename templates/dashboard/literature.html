@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Literature Reviews | ResearchRadar AI{% endblock %}
+
+{% block page_title %}Literature Review Generator{% endblock %}
+{% block page_subtitle %}Synthesize and compile structured literature reviews from analyzed papers{% endblock %}
+
+{% block content %}
+<div class="split-viewer">
+    <!-- Left Pane: Review Manager -->
+    <div class="split-left">
+        <!-- New Review Compiler Form -->
+        <div class="card-3d" style="margin-bottom:1.5rem; padding: 1.25rem;">
+            <div class="pop-3d">
+                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom:12px; color:var(--secondary);">
+                    <i class="fas fa-plus"></i> Compile Synthesis
+                </h3>
+                
+                <div class="form-group">
+                    <label for="review-title-input">Review Title</label>
+                    <input type="text" id="review-title-input" class="form-control" placeholder="e.g., Literature Synthesis on Transformers" value="Literature Review: Current Advancements">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Select Papers to Include</label>
+                    {% if papers %}
+                    <div class="multi-select-list" style="max-height: 180px;">
+                        {% for paper in papers %}
+                        <div class="select-card-item" onclick="toggleSelectCard(this)">
+                            <input type="checkbox" value="{{ paper.id }}" onclick="event.stopPropagation()">
+                            <span class="select-card-title" title="{{ paper.title }}">{{ paper.title|default:"Unnamed Paper" }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button onclick="generateLiteratureReview(this)" class="btn-3d" style="width:100%; justify-content:center; padding: 10px;">
+                        <i class="fas fa-magic"></i> Generate Review
+                    </button>
+                    {% else %}
+                    <p style="font-size:0.8rem; color:var(--text-muted); font-style:italic;">No completed papers available. Upload and process papers first.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Existing Reviews History List -->
+        <h4 style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; letter-spacing:0.5px;">
+            Past Syntheses
+        </h4>
+        {% for review in reviews %}
+        <div id="review-card-{{ review.id }}" class="list-item-card {% if forloop.first %}active{% endif %}" onclick="showReviewDetails('{{ review.id }}')">
+            <h4 style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ review.title }}</h4>
+            <p style="margin-top: 4px;"><i class="fas fa-file-invoice"></i> {{ review.papers.count }} papers integrated</p>
+            <span style="font-size:0.7rem; color:var(--text-muted); display:block; margin-top:6px;">
+                {{ review.created_at|date:"M d, Y" }}
+            </span>
+        </div>
+        {% empty %}
+        <p style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">No reviews compiled yet.</p>
+        {% endfor %}
+    </div>
+    
+    <!-- Right Pane: Active Review Viewer -->
+    <div class="split-right">
+        {% for review in reviews %}
+        <div id="review-pane-{{ review.id }}" class="review-detail-wrapper" style="{% if not forloop.first %}display:none;{% endif %}">
+            
+            <div class="card-3d" style="margin-bottom:1.5rem;">
+                <div class="pop-3d">
+                    <span class="tag-item" style="margin-bottom:8px; border-color:var(--secondary); color:var(--secondary);">
+                        <i class="fas fa-book"></i> Literature Synthesis
+                    </span>
+                    <h2 style="font-size:1.5rem; font-weight:800; color:#fff; line-height:1.3; margin-bottom:12px;">{{ review.title }}</h2>
+                    
+                    <h4 style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">Integrated Sources:</h4>
+                    <div class="tag-container" style="margin-top:0;">
+                        {% for paper in review.papers.all %}
+                        <span class="tag-item" style="font-size:0.75rem; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ paper.title }}">
+                            <i class="fas fa-file-pdf"></i> {{ paper.title|default:"Unnamed Paper" }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Review Content Sections -->
+            <div class="card-3d">
+                <div class="pop-3d lit-review-body">
+                    
+                    <div>
+                        <h3 class="lit-section-title">1. Introduction</h3>
+                        <p style="line-height:1.6; color:var(--text-main);">{{ review.introduction }}</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="lit-section-title">2. Existing Approaches</h3>
+                        <p style="line-height:1.6; color:var(--text-main);">{{ review.existing_approaches }}</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="lit-section-title">3. Comparison of Methods</h3>
+                        <p style="line-height:1.6; color:var(--text-main);">{{ review.comparison_of_methods }}</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="lit-section-title">4. Limitations in Literature</h3>
+                        <p style="line-height:1.6; color:var(--text-main);">{{ review.limitations }}</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="lit-section-title">5. Future Research Opportunities</h3>
+                        <p style="line-height:1.6; color:var(--text-main);">{{ review.research_opportunities }}</p>
+                    </div>
+                    
+                    <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top:1.5rem; margin-top:0.5rem;">
+                        <h3 class="lit-section-title" style="border-left-color:var(--primary); color:var(--primary);">References</h3>
+                        <div id="references-container-{{ review.id }}" style="font-size:0.85rem; font-family:monospace; line-height:1.5; color:var(--text-muted);">
+                            <!-- Populated in script -->
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+        </div>
+        {% empty %}
+        <div class="card-3d empty-state" style="height:100%; display:flex; align-items:center; justify-content:center;">
+            <div class="pop-3d">
+                <i class="fas fa-book-open" style="font-size:4rem; color:var(--text-muted); opacity:0.3; margin-bottom:1.5rem;"></i>
+                <h2>Select Papers to Synthesize</h2>
+                <p style="margin-top:8px; color:var(--text-muted); max-width:400px; margin-left:auto; margin-right:auto;">
+                    Integrate findings across multiple research papers into an organized academic literature review. Select papers on the left.
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showReviewDetails(reviewId) {
+        document.querySelectorAll('.list-item-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        const activeCard = document.getElementById('review-card-' + reviewId);
+        if (activeCard) activeCard.classList.add('active');
+        
+        document.querySelectorAll('.review-detail-wrapper').forEach(pane => {
+            pane.style.display = 'none';
+        });
+        const activePane = document.getElementById('review-pane-' + reviewId);
+        if (activePane) activePane.style.display = 'block';
+    }
+
+    // Format references from raw text to bulleted items
+    window.addEventListener('DOMContentLoaded', () => {
+        {% for review in reviews %}
+        (function() {
+            const container = document.getElementById("references-container-{{ review.id }}");
+            if (container) {
+                let rawRefs = `{{ review.references|safe }}`;
+                let lines = rawRefs.split('\n');
+                let html = '<ul style="padding-left:1.2rem; list-style-type:square;">';
+                lines.forEach(line => {
+                    if (line.trim()) {
+                        // strip bullet chars
+                        let cleanLine = line.replace(/^[-*\d\.\s\t]+/, "").trim();
+                        html += `<li style="margin-bottom:8px;">${cleanLine}</li>`;
+                    }
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            }
+        })();
+        {% endfor %}
+    });
+</script>
+{% endblock %}

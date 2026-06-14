@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Research Gaps | ResearchRadar AI{% endblock %}
+
+{% block page_title %}Research Gap Analysis{% endblock %}
+{% block page_subtitle %}Discover underexplored research territories and limitations{% endblock %}
+
+{% block header_actions %}
+<button class="btn-3d btn-3d-accent" onclick="runGapDetection(this)">
+    <i class="fas fa-arrows-spin"></i> Run Gap Detection Agent
+</button>
+{% endblock %}
+
+{% block content %}
+{% if gaps %}
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap:2rem;">
+    {% for gap in gaps %}
+    <div class="card-3d" style="display:flex; flex-direction:column; justify-content:space-between; min-height: 320px;">
+        <div class="pop-3d">
+            <!-- Header section of gap -->
+            <div style="display:flex; justify-content:space-between; align-items:start; gap:15px; margin-bottom:1.25rem;">
+                <h3 style="font-size:1.2rem; font-weight:700; color:#ffffff; line-height:1.3;">
+                    {{ gap.title }}
+                </h3>
+                
+                <!-- 3D Gauge Circle -->
+                <div class="gauge-container" title="Confidence Score">
+                    <svg class="gauge-svg">
+                        <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
+                        <circle class="gauge-fill gauge-fill-purple" cx="50" cy="50" r="40" 
+                                stroke-dasharray="251.2" 
+                                stroke-dashoffset="calc(251.2 - (251.2 * ({{ gap.confidence_score }} / 100.0)))">
+                        </circle>
+                    </svg>
+                    <div class="gauge-value pop-3d-lg">
+                        {{ gap.confidence_score|floatformat:0 }}
+                    </div>
+                </div>
+            </div>
+            
+            <p style="font-size:0.95rem; line-height:1.55; color:var(--text-muted); margin-bottom:1.25rem;">
+                {{ gap.description }}
+            </p>
+            
+            <!-- Compact Gap Scores badges -->
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1.5rem;">
+                <span class="tag-item" style="border-color: rgba(0, 242, 254, 0.25); background: rgba(0, 242, 254, 0.03);" title="Novelty Score">
+                    <i class="fas fa-star" style="color:var(--secondary); font-size:0.75rem;"></i> Novelty: <strong style="color:#ffffff;">{{ gap.novelty_score|default:80 }}</strong>
+                </span>
+                <span class="tag-item" style="border-color: rgba(255, 0, 127, 0.25); background: rgba(255, 0, 127, 0.03);" title="Impact Score">
+                    <i class="fas fa-circle-nodes" style="color:var(--accent); font-size:0.75rem;"></i> Impact: <strong style="color:#ffffff;">{{ gap.impact_score|default:80 }}</strong>
+                </span>
+                <span class="tag-item" style="border-color: rgba(234, 179, 8, 0.25); background: rgba(234, 179, 8, 0.03);" title="Difficulty Score">
+                    <i class="fas fa-sliders" style="color:#eab308; font-size:0.75rem;"></i> Difficulty: <strong style="color:#ffffff;">{{ gap.difficulty_score|default:70 }}</strong>
+                </span>
+                <span class="tag-item" style="border-color: rgba(138, 43, 226, 0.25); background: rgba(138, 43, 226, 0.03);" title="Confidence Score">
+                    <i class="fas fa-shield-halved" style="color:var(--primary); font-size:0.75rem;"></i> Confidence: <strong style="color:#ffffff;">{{ gap.confidence_score|floatformat:0 }}</strong>
+                </span>
+            </div>
+            
+            <!-- Supporting Papers -->
+            <div style="margin-bottom:1.5rem;">
+                <h4 style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--secondary); letter-spacing:0.5px; margin-bottom:8px;">
+                    <i class="fas fa-file-invoice"></i> Supporting Papers
+                </h4>
+                <div class="supporting-papers-list">
+                    {% for paper in gap.supporting_papers.all %}
+                    <div class="supporting-paper-badge" title="{{ paper.title }}">
+                        {{ paper.title|default:"Unnamed Paper"|truncatechars:45 }}
+                    </div>
+                    {% empty %}
+                    <span style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">No explicit paper associations.</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Button -->
+        <div style="border-top:1px solid rgba(255,255,255,0.04); padding-top:1.25rem; margin-top:1rem; display:flex; justify-content:flex-end;">
+            <button onclick="generateIdeaForGap('{{ gap.id }}', this)" class="btn-3d btn-3d-accent" style="font-size:0.85rem; width:100%; justify-content:center;">
+                <i class="fas fa-lightbulb"></i> Generate Project Idea
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card-3d empty-state">
+    <div class="pop-3d">
+        <i class="fas fa-bolt-lightning" style="font-size:4rem; color:var(--text-muted); opacity:0.3; margin-bottom:1.5rem;"></i>
+        <h2>No Research Gaps Detected Yet</h2>
+        <p style="margin-top:8px; margin-bottom:1.5rem; color:var(--text-muted); max-width:500px; margin-left:auto; margin-right:auto;">
+            The GapDetectionAgent compares methodologies, conclusions, and objectives across all completed studies to isolate discrepancies and generate opportunities.
+        </p>
+        <button class="btn-3d" onclick="runGapDetection(this)">
+            <i class="fas fa-arrows-spin"></i> Trigger Gap Detection Agent
+        </button>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

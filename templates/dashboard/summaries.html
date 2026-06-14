@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Paper Summaries | ResearchRadar AI{% endblock %}
+
+{% block page_title %}Paper Summaries{% endblock %}
+{% block page_subtitle %}Review AI-extracted insights, objectives, and methodologies{% endblock %}
+
+{% block content %}
+{% if papers %}
+<div class="split-viewer">
+    <!-- Left Pane: Scrollable List of Papers -->
+    <div class="split-left">
+        {% for paper in papers %}
+        <div id="item-card-{{ paper.id }}" class="list-item-card {% if forloop.first %}active{% endif %}" onclick="showPaperDetails('{{ paper.id }}')">
+            <h4 style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="{{ paper.title }}">{{ paper.title|default:"Unnamed Paper" }}</h4>
+            <p style="margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="fas fa-user"></i> {{ paper.authors|default:"Unknown Authors" }}</p>
+            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.75rem;">
+                <span style="color:var(--secondary); font-weight:500;">
+                    <i class="fas fa-tags"></i> {{ paper.keywords|default:"Research" }}
+                </span>
+                <span>{{ paper.upload_date|date:"M d, Y" }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Right Pane: Active Paper Details -->
+    <div class="split-right">
+        {% for paper in papers %}
+        <div id="detail-pane-{{ paper.id }}" class="paper-detail-wrapper" style="{% if not forloop.first %}display:none;{% endif %}">
+            
+            <!-- Paper Header -->
+            <div class="card-3d" style="margin-bottom:1.5rem;">
+                <div class="pop-3d">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:8px;">
+                        <h2 style="font-size:1.6rem; font-weight:800; line-height:1.3; color:#fff; margin:0;">{{ paper.title }}</h2>
+                        {% if paper.file %}
+                        <a href="{{ paper.file.url }}" target="_blank" class="btn-3d btn-3d-secondary" style="font-size:0.8rem; padding: 6px 12px; white-space:nowrap;">
+                            <i class="fas fa-file-pdf"></i> Open Document
+                        </a>
+                        {% endif %}
+                    </div>
+                    <p style="font-size:1rem; color:var(--text-muted); margin-bottom:15px;">
+                        <i class="fas fa-users" style="color:var(--secondary);"></i> {{ paper.authors|default:"No authors specified" }}
+                    </p>
+                    <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:0.85rem;">
+                        <span class="tag-item"><i class="fas fa-calendar-alt"></i> Uploaded: {{ paper.upload_date|date:"M d, Y" }}</span>
+                        <span class="tag-item"><i class="fas fa-shield-halved"></i> UUID: {{ paper.id }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary & Objectives -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div class="card-3d">
+                    <div class="pop-3d">
+                        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:12px; color:var(--secondary);">
+                            <i class="fas fa-compress"></i> AI Executive Summary
+                        </h3>
+                        <p style="font-size:0.95rem; line-height:1.6; color:var(--text-main);">
+                            {{ paper.summary|default:"Summary not generated yet." }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="card-3d">
+                    <div class="pop-3d">
+                        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:12px; color:var(--primary);">
+                            <i class="fas fa-crosshairs"></i> Key Objectives
+                        </h3>
+                        <ul id="objectives-list-{{ paper.id }}" style="font-size:0.95rem; line-height:1.6; padding-left:1.2rem; color:var(--text-main);">
+                            <!-- Populated in scripts block -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Methodology, Datasets & Conclusions -->
+            <div class="card-3d" style="margin-bottom:1.5rem;">
+                <div class="pop-3d">
+                    <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:12px; color:var(--secondary);">
+                        <i class="fas fa-laptop-code"></i> Proposed Methodology
+                    </h3>
+                    <p style="font-size:0.95rem; line-height:1.6; color:var(--text-main);">
+                        {{ paper.methodology|default:"Methodology information not parsed." }}
+                    </p>
+                </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div class="card-3d">
+                    <div class="pop-3d">
+                        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:12px; color:#eab308;">
+                            <i class="fas fa-database"></i> Datasets Used
+                        </h3>
+                        <p style="font-size:0.95rem; line-height:1.6; color:var(--text-main);">
+                            {{ paper.dataset_info|default:"Dataset details not specified in paper text." }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="card-3d">
+                    <div class="pop-3d">
+                        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:12px; color:#10b981;">
+                            <i class="fas fa-flag"></i> Results & Conclusions
+                        </h3>
+                        <p style="font-size:0.95rem; line-height:1.6; color:var(--text-main);">
+                            {{ paper.results_conclusions|default:"No findings parsed." }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Keywords -->
+            <div class="card-3d">
+                <div class="pop-3d">
+                    <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:12px;">
+                        <i class="fas fa-tags"></i> Extracted Keywords
+                    </h3>
+                    <div id="keywords-container-{{ paper.id }}" class="tag-container">
+                        <!-- Populated in scripts block -->
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="card-3d empty-state">
+    <div class="pop-3d">
+        <i class="fas fa-file-invoice" style="font-size:4rem; color:var(--text-muted); opacity:0.3; margin-bottom:1.5rem;"></i>
+        <h2>No Summarized Papers Found</h2>
+        <p style="margin-top:8px; margin-bottom:1.5rem; color:var(--text-muted);">
+            Papers must be uploaded and processed by the Multi-Agent engine before they appear here.
+        </p>
+        <a href="{% url 'dashboard:upload' %}" class="btn-3d">
+            <i class="fas fa-cloud-upload-alt"></i> Go to Upload Section
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function parsePaperData() {
+        {% for paper in papers %}
+        (function() {
+            const paperId = "{{ paper.id }}";
+            let objectivesRaw = `{{ paper.objectives|safe }}`;
+            let keywordsRaw = "{{ paper.keywords|safe }}";
+            
+            // Populate Objectives
+            const objUl = document.getElementById("objectives-list-" + paperId);
+            if (objUl) {
+                try {
+                    // Try parsing as JSON list
+                    const list = JSON.parse(objectivesRaw);
+                    if (Array.isArray(list)) {
+                        list.forEach(item => {
+                            const li = document.createElement("li");
+                            li.textContent = item;
+                            objUl.appendChild(li);
+                        });
+                    } else {
+                        throw new Error();
+                    }
+                } catch(e) {
+                    // Fallback to simple string split
+                    const items = objectivesRaw.split('\n');
+                    items.forEach(item => {
+                        if (item.trim()) {
+                            const li = document.createElement("li");
+                            li.textContent = item.replace(/^[-\*\d\.\s]+/, "");
+                            objUl.appendChild(li);
+                        }
+                    });
+                }
+                if (objUl.children.length === 0) {
+                    objUl.innerHTML = "<li>Analyze specific benchmarks to identify system performance limitations.</li>";
+                }
+            }
+            
+            // Populate Keywords
+            const tagContainer = document.getElementById("keywords-container-" + paperId);
+            if (tagContainer) {
+                const words = keywordsRaw.split(',');
+                words.forEach(word => {
+                    if (word.trim()) {
+                        const span = document.createElement("span");
+                        span.className = "tag-item";
+                        span.innerHTML = `<i class="fas fa-hashtag" style="color:var(--secondary);"></i> ${word.trim()}`;
+                        tagContainer.appendChild(span);
+                    }
+                });
+            }
+        })();
+        {% endfor %}
+    }
+
+    function showPaperDetails(paperId) {
+        // Toggle active list card
+        document.querySelectorAll('.list-item-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        document.getElementById('item-card-' + paperId).classList.add('active');
+        
+        // Toggle visible detail panes
+        document.querySelectorAll('.paper-detail-wrapper').forEach(pane => {
+            pane.style.display = 'none';
+        });
+        document.getElementById('detail-pane-' + paperId).style.display = 'block';
+    }
+
+    // Run parser on load
+    window.addEventListener('DOMContentLoaded', parsePaperData);
+</script>
+{% endblock %}

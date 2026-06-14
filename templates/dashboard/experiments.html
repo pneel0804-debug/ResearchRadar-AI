@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Experimental Plans | ResearchRadar AI{% endblock %}
+
+{% block page_title %}Experimental Plans{% endblock %}
+{% block page_subtitle %}Review AI-suggested training loops, benchmarks, and model parameters{% endblock %}
+
+{% block content %}
+<div class="split-viewer">
+    <!-- Left Pane: Plans List -->
+    <div class="split-left">
+        <!-- Generate Plan trigger for ideas without plan -->
+        <div class="card-3d" style="margin-bottom:1.5rem; padding: 1.25rem;">
+            <div class="pop-3d">
+                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom:12px; color:var(--secondary);">
+                    <i class="fas fa-plus"></i> Initialize Plan
+                </h3>
+                {% if ideas %}
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="idea-select-dropdown">Select Project Idea</label>
+                    <select id="idea-select-dropdown" class="form-control" style="margin-bottom: 12px; background: rgba(15, 17, 30, 0.9);">
+                        {% for idea in ideas %}
+                        <option value="{{ idea.id }}">{{ idea.title|truncatechars:40 }}</option>
+                        {% endfor %}
+                    </select>
+                    <button onclick="generateExperimentalPlan(document.getElementById('idea-select-dropdown').value, this)" class="btn-3d btn-3d-accent" style="width:100%; justify-content:center; padding: 10px;">
+                        <i class="fas fa-flask"></i> Generate Plan
+                    </button>
+                </div>
+                {% else %}
+                <p style="font-size:0.8rem; color:var(--text-muted); font-style:italic;">No project ideas found. Generate project ideas first.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Existing Plans History -->
+        <h4 style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; letter-spacing:0.5px;">
+            Active Protocols
+        </h4>
+        {% for plan in plans %}
+        <div id="plan-card-{{ plan.id }}" class="list-item-card {% if forloop.first %}active{% endif %}" onclick="showPlanDetails('{{ plan.id }}')">
+            <h4 style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ plan.title }}</h4>
+            <p style="margin-top: 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><i class="fas fa-lightbulb"></i> Idea: {{ plan.project_idea.title }}</p>
+            <span style="font-size:0.7rem; color:var(--text-muted); display:block; margin-top:6px;">
+                {{ plan.created_at|date:"M d, Y" }}
+            </span>
+        </div>
+        {% empty %}
+        <p style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">No plans generated yet.</p>
+        {% endfor %}
+    </div>
+    
+    <!-- Right Pane: Active Plan Timeline Step-by-Step Viewer -->
+    <div class="split-right">
+        {% for plan in plans %}
+        <div id="plan-pane-{{ plan.id }}" class="plan-detail-wrapper" style="{% if not forloop.first %}display:none;{% endif %}">
+            
+            <!-- Plan Header Info -->
+            <div class="card-3d" style="margin-bottom:1.5rem;">
+                <div class="pop-3d">
+                    <span class="tag-item" style="margin-bottom:8px; border-color:var(--primary); color:var(--primary);">
+                        <i class="fas fa-flask"></i> Experimental Roadmap
+                    </span>
+                    <h2 style="font-size:1.5rem; font-weight:800; color:#fff; line-height:1.3; margin-bottom:8px;">{{ plan.title }}</h2>
+                    <p style="font-size:0.9rem; color:var(--text-muted);">
+                        Methodology Strategy: <strong style="color:var(--secondary);">{{ plan.project_idea.title }}</strong>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- 3D Timeline of Execution Steps -->
+            <div class="card-3d">
+                <div class="pop-3d">
+                    <h3 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:12px;">
+                        <i class="fas fa-list-ol" style="color:var(--secondary);"></i> Validation Protocol
+                    </h3>
+                    
+                    <div class="timeline-3d">
+                        
+                        <!-- Step 1: Datasets -->
+                        <div class="timeline-step">
+                            <h4 class="timeline-step-title">Step 1: Benchmark Datasets</h4>
+                            <div class="timeline-step-desc">
+                                <p style="margin-bottom:8px;">Extract and clean targets from these recommended databases:</p>
+                                <div id="datasets-container-{{ plan.id }}" class="tag-container" style="margin-top:0;">
+                                    <!-- Populated in scripts block -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2: AI Models -->
+                        <div class="timeline-step">
+                            <h4 class="timeline-step-title">Step 2: Recommended Model Architectures</h4>
+                            <div class="timeline-step-desc">
+                                <p style="margin-bottom:8px;">Baseline and test using the following architectures:</p>
+                                <div id="models-container-{{ plan.id }}" class="tag-container" style="margin-top:0;">
+                                    <!-- Populated in scripts block -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3: Training Protocol -->
+                        <div class="timeline-step">
+                            <h4 class="timeline-step-title">Step 3: Training Approach</h4>
+                            <p class="timeline-step-desc">
+                                {{ plan.training_approach }}
+                            </p>
+                        </div>
+                        
+                        <!-- Step 4: Metrics -->
+                        <div class="timeline-step">
+                            <h4 class="timeline-step-title">Step 4: Performance Indicators</h4>
+                            <div class="timeline-step-desc">
+                                <p style="margin-bottom:8px;">Validate outcomes against the following thresholds:</p>
+                                <div id="metrics-container-{{ plan.id }}" class="tag-container" style="margin-top:0;">
+                                    <!-- Populated in scripts block -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 5: Engineering Risks -->
+                        <div class="timeline-step" style="margin-bottom:0;">
+                            <h4 class="timeline-step-title" style="color:var(--accent);">Step 5: Challenges & Mitigations</h4>
+                            <div class="timeline-step-desc" style="border-left: 2px solid var(--accent); padding-left:12px; background: rgba(255, 0, 127, 0.02); padding-top:4px; padding-bottom:4px; border-radius: 0 8px 8px 0;">
+                                {{ plan.expected_challenges }}
+                            </div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+        </div>
+        {% empty %}
+        <div class="card-3d empty-state" style="height:100%; display:flex; align-items:center; justify-content:center;">
+            <div class="pop-3d">
+                <i class="fas fa-flask" style="font-size:4rem; color:var(--text-muted); opacity:0.3; margin-bottom:1.5rem;"></i>
+                <h2>No Active Protocols</h2>
+                <p style="margin-top:8px; color:var(--text-muted); max-width:400px; margin-left:auto; margin-right:auto;">
+                    Initialize an experimental roadmap by selecting an AI-generated idea from the sidebar dropdown.
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showPlanDetails(planId) {
+        document.querySelectorAll('.list-item-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        const activeCard = document.getElementById('plan-card-' + planId);
+        if (activeCard) activeCard.classList.add('active');
+        
+        document.querySelectorAll('.plan-detail-wrapper').forEach(pane => {
+            pane.style.display = 'none';
+        });
+        const activePane = document.getElementById('plan-pane-' + planId);
+        if (activePane) activePane.style.display = 'block';
+    }
+
+    // Parse values on load
+    window.addEventListener('DOMContentLoaded', () => {
+        {% for plan in plans %}
+        (function() {
+            const planId = "{{ plan.id }}";
+            
+            // 1. Datasets
+            const dbContainer = document.getElementById("datasets-container-" + planId);
+            if (dbContainer) {
+                let itemsRaw = `{{ plan.datasets|safe }}`;
+                let lines = itemsRaw.split('\n');
+                lines.forEach(line => {
+                    if (line.trim()) {
+                        let span = document.createElement("span");
+                        span.className = "tag-item";
+                        span.innerHTML = `<i class="fas fa-database" style="color:var(--secondary);"></i> ${line.replace(/^[-*\d\.\s\t]+/, "").trim()}`;
+                        dbContainer.appendChild(span);
+                    }
+                });
+            }
+            
+            // 2. Models
+            const modelContainer = document.getElementById("models-container-" + planId);
+            if (modelContainer) {
+                let itemsRaw = `{{ plan.ai_models|safe }}`;
+                let lines = itemsRaw.split('\n');
+                lines.forEach(line => {
+                    if (line.trim()) {
+                        let span = document.createElement("span");
+                        span.className = "tag-item";
+                        span.innerHTML = `<i class="fas fa-network-wired" style="color:var(--primary);"></i> ${line.replace(/^[-*\d\.\s\t]+/, "").trim()}`;
+                        modelContainer.appendChild(span);
+                    }
+                });
+            }
+            
+            // 3. Metrics
+            const metricContainer = document.getElementById("metrics-container-" + planId);
+            if (metricContainer) {
+                let itemsRaw = `{{ plan.evaluation_metrics|safe }}`;
+                let lines = itemsRaw.split('\n');
+                lines.forEach(line => {
+                    if (line.trim()) {
+                        let span = document.createElement("span");
+                        span.className = "tag-item";
+                        span.innerHTML = `<i class="fas fa-square-poll-vertical" style="color:#10b981;"></i> ${line.replace(/^[-*\d\.\s\t]+/, "").trim()}`;
+                        metricContainer.appendChild(span);
+                    }
+                });
+            }
+        })();
+        {% endfor %}
+    });
+</script>
+{% endblock %}
